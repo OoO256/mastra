@@ -3,6 +3,7 @@ import type { SharedV2ProviderOptions } from '@ai-sdk/provider-v5';
 import type { CallSettings, IdGenerator, StopCondition, ToolChoice, ToolSet, StepResult, ModelMessage } from 'ai-v5';
 import z from 'zod';
 import type { MessageList } from '../agent/message-list';
+import type { RepairToolCallFunction } from '../agent/agent.types';
 import type { StructuredOutputOptions } from '../agent/types';
 import type { ModelMethodType } from '../llm/model/model.loop.types';
 import type { MastraLanguageModelV2 } from '../llm/model/shared.types';
@@ -86,6 +87,8 @@ export type LoopOptions<Tools extends ToolSet = ToolSet, OUTPUT extends OutputSc
   requireToolApproval?: boolean;
   agentId: string;
   methodType: ModelMethodType;
+  /** A function that attempts to repair a tool call that failed to parse */
+  repairToolCall?: RepairToolCallFunction<any>;
 };
 
 export type LoopRun<Tools extends ToolSet = ToolSet, OUTPUT extends OutputSchema = undefined> = LoopOptions<

@@ -1,5 +1,6 @@
 import type { WritableStream } from 'stream/web';
-import type { ModelMessage, ToolChoice } from 'ai-v5';
+import type { JSONSchema7 } from 'json-schema';
+import type { ModelMessage, ToolChoice, ToolSet } from 'ai-v5';
 import type { MastraScorer, MastraScorers, ScoringSamplingConfig } from '../evals';
 import type { SystemMessage } from '../llm';
 import type { StreamTextOnFinishCallback, StreamTextOnStepFinishCallback } from '../llm/model/base.types';
@@ -13,6 +14,40 @@ import type { OutputSchema } from '../stream/base/schema';
 import type { ChunkType } from '../stream/types';
 import type { MessageListInput } from './message-list';
 import type { AgentMemoryOption, ToolsetsInput, ToolsInput, StructuredOutputOptions, AgentMethodType } from './types';
+
+/**
+ * Information about a tool call that failed to parse
+ */
+export type ToolCallRepairContext<TOOLS extends ToolSet = ToolSet> = {
+  /** The tool call that failed to parse */
+  toolCall: {
+    toolCallId: string;
+    toolName: string;
+    input: string;
+  };
+  /** The tools that are available */
+  tools: TOOLS;
+  /** A function that returns the JSON Schema for a tool */
+  inputSchema: (options: { toolName: string }) => JSONSchema7 | undefined;
+  /** The error that occurred while parsing the tool call */
+  error: Error;
+};
+
+/**
+ * Repaired tool call result
+ */
+export type RepairedToolCall = {
+  toolCallId: string;
+  toolName: string;
+  input: string;
+} | null;
+
+/**
+ * Function to repair a tool call that failed to parse
+ */
+export type RepairToolCallFunction<TOOLS extends ToolSet = ToolSet> = (
+  context: ToolCallRepairContext<TOOLS>,
+) => Promise<RepairedToolCall> | RepairedToolCall;
 
 export type MultiPrimitiveExecutionOptions = {
   /** Memory configuration for conversation persistence and retrieval */
@@ -125,6 +160,12 @@ export type AgentExecutionOptions<
 
   /** Whether to include raw chunks in the stream output (not available on all model providers) */
   includeRawChunks?: boolean;
+
+  /**
+   * A function that attempts to repair a tool call that failed to parse.
+   * Return either a repaired tool call or null if the tool call cannot be repaired.
+   */
+  repairToolCall?: RepairToolCallFunction<any>;
 };
 
 export type InnerAgentExecutionOptions<
